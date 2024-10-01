@@ -49,7 +49,7 @@ export const login = async(req,res)=>{
             });
         };
 
-        const user = User.findOne({email});
+        let user = User.findOne({email});
         if(!user){
             return res.status(400).json({
                 message : "User does not exist with this email",
@@ -76,6 +76,12 @@ export const login = async(req,res)=>{
             userId : user._id,
         } 
         const token = await jwt.sign(tokenData,process.env.ACCESS_TOKEN_SECRET, {expiresIn : process.env.ACCESS_TOKEN_EXPIRY});
+        user = {
+            _id : user._id,
+            fullName : user.fullName,
+            phoneNumber : user.phoneNumber,
+             role : user.role
+        }
         return res.status(200).cookie("token",token,{maxAge:1*24*60*60*1000, httpOnly : true, sameSite : 'strict'}).json({
             message : `welcome back ${user.fullName}`,
             success:true,
@@ -88,5 +94,62 @@ export const login = async(req,res)=>{
 } 
 
 export const logout = async (req,res)=>{
-    
+    res.send(200).cookie("token","",{maxAge : 0}).json({
+        message : "Logout succesfull",
+        success : true
+    });
 }   
+
+export const updateProfile = async(req,res)=>{
+    try{
+        const {fullName,email,phoneNumber,bio,skills} = req.body;
+        const file = req.file;
+        if(!fullName || !email || !phoneNumber || !bio || !skills){
+            return res.status(400).json(
+                {
+                    message : "Insufficient Data",
+                    success : false
+                }
+            )
+        }
+
+        //upload on cloudinary
+        //#TODO: Upload on cloudinary
+
+        const skillsArray = skills.split(",");
+        const userId = req.id;
+        let user = User.findById(userId);
+        if(!user){
+            res.status(401).json({
+                message : "User not found",
+                success : false
+            })
+        }
+        
+        user.fullName = fullName;
+        user.email = email;
+        user.phoneNumber = phoneNumber;
+        user.profile.bio = bio;
+        user.profile.skills = skillsArray;
+
+        //Resume to be added
+
+        await user.save();
+
+        user = {
+            _id : user._id,
+            fullName : user.fullName,
+            phoneNumber : user.phoneNumber,
+            profile : user.profile
+        }
+
+        return res.status(200).json(
+            {
+                message : "Profile Updated successfully",
+                user,
+                success : true,
+            }
+        )
+    }
+    catch(error){console.log(error)}
+}
