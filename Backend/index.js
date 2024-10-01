@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors'
 import dotenv from 'dotenv';
 import connectDB from './utils/db.js';
+import userRoute from './Routes/user.routes.js';
 dotenv.config({})
 const app = express();
 
@@ -21,5 +22,5 @@ const port = process.env.PORT
 app.listen(port || 8000,(req,res)=>{
     connectDB();
     console.log("server is live at port",port);
-
 })
+app.use('/api/v1/user',userRoute);

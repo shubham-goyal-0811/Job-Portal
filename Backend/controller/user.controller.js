@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken'
 export const register = async (req,res) =>{
     try{
         const {fullName,email,phoneNumber,password,role} = req.body;
+        // console.log(req.body);
         if(!fullName || !email || !phoneNumber || !password || !role){
             return res.status(400).json({
                     message : "Something is missing",
@@ -13,7 +14,7 @@ export const register = async (req,res) =>{
                 }
             );
         };
-        const user = User.findOne({email});
+        const user =await User.findOne({email});
         if(user){
             return res.status(400).json({
                 message : "User already exists with this email",
@@ -42,6 +43,7 @@ export const register = async (req,res) =>{
 export const login = async(req,res)=>{
     try{
         const {email,password,role} = req.body;
+        
         if(!email || !password || !role){
             return res.status(400).json({
                 message : "something is missing",
@@ -49,14 +51,14 @@ export const login = async(req,res)=>{
             });
         };
 
-        let user = User.findOne({email});
+        let user = await User.findOne({email});
         if(!user){
             return res.status(400).json({
                 message : "User does not exist with this email",
                 success : false
             });
         };
-
+        
         const isPassCorrect = await bcrypt.compare(password,user.password);
         if(!isPassCorrect){
             return res.status(401).json({
@@ -80,12 +82,12 @@ export const login = async(req,res)=>{
             _id : user._id,
             fullName : user.fullName,
             phoneNumber : user.phoneNumber,
-             role : user.role
+            role : user.role
         }
         return res.status(200).cookie("token",token,{maxAge:1*24*60*60*1000, httpOnly : true, sameSite : 'strict'}).json({
             message : `welcome back ${user.fullName}`,
             success:true,
-            user
+            user,
         })
     }
     catch(error){
@@ -94,7 +96,7 @@ export const login = async(req,res)=>{
 } 
 
 export const logout = async (req,res)=>{
-    res.send(200).cookie("token","",{maxAge : 0}).json({
+    res.status(200).cookie("token",null,{maxAge : 0}).json({
         message : "Logout succesfull",
         success : true
     });
@@ -103,6 +105,7 @@ export const logout = async (req,res)=>{
 export const updateProfile = async(req,res)=>{
     try{
         const {fullName,email,phoneNumber,bio,skills} = req.body;
+        console.log(req.body);
         const file = req.file;
         if(!fullName || !email || !phoneNumber || !bio || !skills){
             return res.status(400).json(
@@ -116,9 +119,11 @@ export const updateProfile = async(req,res)=>{
         //upload on cloudinary
         //#TODO: Upload on cloudinary
 
-        const skillsArray = skills.split(",");
+        const skillsArray = skills?.split(",");
+        console.log(bio);
+        console.log(skillsArray);
         const userId = req.id;
-        let user = User.findById(userId);
+        let user = await User.findById(userId);
         if(!user){
             res.status(401).json({
                 message : "User not found",
@@ -130,7 +135,7 @@ export const updateProfile = async(req,res)=>{
         user.email = email;
         user.phoneNumber = phoneNumber;
         user.profile.bio = bio;
-        user.profile.skills = skillsArray;
+        user.profile.skills = skillsArray.toString();
 
         //Resume to be added
 
@@ -140,7 +145,8 @@ export const updateProfile = async(req,res)=>{
             _id : user._id,
             fullName : user.fullName,
             phoneNumber : user.phoneNumber,
-            profile : user.profile
+            profile : user.profile,
+            email : user.email
         }
 
         return res.status(200).json(
