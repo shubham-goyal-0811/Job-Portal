@@ -4,6 +4,8 @@ import cors from 'cors'
 import dotenv from 'dotenv';
 import connectDB from './utils/db.js';
 import userRoute from './Routes/user.routes.js';
+import companyRoute from './Routes/company.routes.js';
+
 dotenv.config({})
 const app = express();
 
@@ -14,7 +16,6 @@ app.use(cookieParser());
 const corsOptions = {
     origin : "http://localhost:5173",
     credentials : true,
-
 }
 app.use(cors(corsOptions));
 
@@ -24,3 +25,4 @@ app.listen(port || 8000,(req,res)=>{
     console.log("server is live at port",port);
 })
 app.use('/api/v1/user',userRoute);
+app.use('/api/v1/company',companyRoute);
